@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyTitle>MvsAppApi.JsonAdapter</AssemblyTitle>
+    <Company>Max Value Software, LLC</Company>
+    <Product>MvsAppApi</Product>
+    <Description>Json Adapter for MVS Apps (experimental)</Description>
+    <Copyright>Copyright ©  2022</Copyright>
+    <Version>1.0.2</Version>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <Authors>Max Value Software</Authors>
+    <PackageProjectUrl>https://github.com/MaxValueSoftware/MvsAppApi</PackageProjectUrl>
+    <PackageReleaseNotes></PackageReleaseNotes>
+    <PackageTags>mvs app api json adapter</PackageTags>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <AssemblyVersion>1.0.2</AssemblyVersion>
+    <FileVersion></FileVersion>
+    <RepositoryUrl>https://github.com/MaxValueSoftware/MvsAppApi</RepositoryUrl>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MvsAppApi.Core\MvsAppApi.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+</Project>
