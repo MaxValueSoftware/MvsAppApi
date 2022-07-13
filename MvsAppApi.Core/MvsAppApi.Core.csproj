@@ -6,7 +6,7 @@
     <Product>MvsAppApi</Product>
     <Description>Common code and adapter interface for MVS Apps (experimental)</Description>
     <Copyright>Copyright ©  2022</Copyright>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <Authors>Max Value Software</Authors>
     <PackageProjectUrl>https://github.com/MaxValueSoftware/MvsAppApi</PackageProjectUrl>
@@ -14,7 +14,7 @@
     <PackageTags>mvs app api core adapter</PackageTags>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <AssemblyVersion>1.0.2</AssemblyVersion>
+    <AssemblyVersion>1.0.3</AssemblyVersion>
     <RepositoryUrl>https://github.com/MaxValueSoftware/MvsAppApi</RepositoryUrl>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">

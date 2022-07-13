@@ -44,6 +44,8 @@ namespace MvsAppApi.DllAdapter
         internal delegate bool GetHandsToFileCallback(int callerId, bool errored, int errorCode, string errorMessage, int handsWritten, IntPtr userData);
         internal delegate bool GetHandsToSharedMemoryCallback(int callerId, bool errored, int errorCode, string errorMessage, int handsWritten, int bytesWritten, IntPtr userData);
         internal delegate bool HandsSelectedCallback(string menuItem, [In] string[] selectedHands, int selectedHandsCount);
+        internal unsafe delegate bool SelectStatsCallback(int callerId, bool cancelled, IntPtr selectedStats, int selectedStatsCount, IntPtr userData);
+
 
 
         // API DLLs

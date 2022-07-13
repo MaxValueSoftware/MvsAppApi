@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace MvsAppApi.DllAdapter.Structs
 {
-    // having problems with Categories/Flags which are both defined as in the C++ as "const char **" ...
+    // having problems with Categories/Flags which are both defined in C++ as "const char **" ...
     // see https://www.codeproject.com/Articles/17450/Marshal-an-Array-of-Zero-Terminated-Strings-or-Str (maybe, but yuk!)
     // [StructLayout(LayoutKind.Sequential)] // this is default anyways
     struct StatInternal

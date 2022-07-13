@@ -85,8 +85,8 @@ namespace MvsAppApi.Core
     public delegate bool SelectStatsCallback(int callerId, bool cancelled, string[] selectedStats, int selectedStatsCount, IntPtr userData);
     public delegate bool SelectFiltersCallback(int callerId, bool cancelled, string filters, IntPtr userData);
     public delegate bool GetHandsCallback(int callerId, string[] hands, IntPtr userData);
-    public delegate bool GetHandsToFileCallback(int callerId, string[] hands, /*int handsWritten, */IntPtr userData);
-    public delegate bool GetHandsToSharedMemoryCallback(int callerId, string[] hands, /*int handsWritten, int bytesWritten, */IntPtr userData);
+    public delegate bool GetHandsToFileCallback(int callerId, string[] hands, IntPtr userData);
+    public delegate bool GetHandsToSharedMemoryCallback(int callerId, string[] hands, IntPtr userData);
     public delegate bool GetHandTagsCallback(int callerId, bool errored, int errorCode, string errorMessage, string[] tags, IntPtr userData);
     public delegate bool GetStatsCallback(BlockingCollection<StatInfo> stats, IntPtr userData);
     public delegate bool QueryNotesCallback(QueryNotesResult result, IntPtr userData);

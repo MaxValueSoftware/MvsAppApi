@@ -72,11 +72,10 @@ namespace MvsAppApi.DllAdapter
         private Imports.StatValueCallback _statValueCallbackKeepAlive;
         private Imports.HandsSelectedCallback _handsSelectedCallbackKeepAlive;
         private Imports.TablesCallback _tablesCallbackKeepAlive;
-
+        
         private const string RequestLabel = "Request: ";
         private TimeSpan _totalClientDuration;
-        private long _totalClientResponses;
-        
+        private long _totalClientResponses;        
 
         public bool SendingBrokenResponses { get; set; }
         public bool BreakStatValues { get; set; }
@@ -102,8 +101,8 @@ namespace MvsAppApi.DllAdapter
             _statValueCallbackKeepAlive = StatValueCallback;
             _handsSelectedCallbackKeepAlive = HandsSelectedCallback;
             _tablesCallbackKeepAlive = TablesCallback;
-
-                       var res = Imports.MvsApiInitialize(_log, _quit);
+            
+            var res = Imports.MvsApiInitialize(_log, _quit);
             if (res == ApiErrorCode.MvsApiResultSuccess)
                 res = Imports.MvsApiConnect((int)_profile.Tracker, _profile.MaxOutbound, _profile.MaxInbound, _profile.AppName,
                     _profile.AppVersion, ConnectHashCallback, ConnectInfoCallback);
@@ -496,16 +495,36 @@ namespace MvsAppApi.DllAdapter
             return result == ApiErrorCode.MvsApiResultSuccess;
         }
 
+        private static SelectStatsCallback _selectStatsCallback;
+        private static Imports.SelectStatsCallback _selectStatsCallbackKeepAlive;
+
         public bool SelectStats(TableType tableType, string[] includedStats, string[] defaultStats, SelectStatsCallback callback)
         {
+            _selectStatsCallback = callback;
+            _selectStatsCallbackKeepAlive = SelectStatsCallback;
             var userData = new IntPtr();
             int callerId = 0;
             var start = DateTime.Now;
-            var result = Imports.MvsApiSelectStats(tableType, includedStats, includedStats.Length, defaultStats, defaultStats.Length, callback, userData, ref callerId);
+            ApiErrorCode result;
+            unsafe
+            {
+                result = Imports.MvsApiSelectStats(tableType, includedStats, includedStats.Length, defaultStats, defaultStats.Length, _selectStatsCallbackKeepAlive, userData, ref callerId);
+            }
             var dateDiff = DateTime.Now - start;
             AddClientText(RequestLabel + "SelectStats");
             AddClientText(ClientResponseLine(dateDiff, $"result={result}"));
             return result == ApiErrorCode.MvsApiResultSuccess;
+        }
+
+        private bool SelectStatsCallback(int callerId, bool cancelled, IntPtr selectedStats, int selectedStatsCount, IntPtr userData)
+        {
+            string[] selectedStatsArray;
+            unsafe
+            {
+                selectedStatsArray = StringMarshaller.Marshal((byte **) selectedStats, selectedStatsCount, _log);
+            }
+            var result = _selectStatsCallback(callerId, cancelled, selectedStatsArray, selectedStatsCount, userData);
+            return result;
         }
 
         public bool SelectFilters(string tableType, string statQueryFilters, SelectFiltersCallback callback)
