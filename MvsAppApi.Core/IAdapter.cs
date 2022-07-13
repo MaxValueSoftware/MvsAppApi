@@ -82,7 +82,7 @@ namespace MvsAppApi.Core
     public delegate bool NoopCallback(int wait, bool shouldFail);
 
     // result callbacks
-    public delegate bool SelectStatsCallback(int callerId, bool cancelled, string[] selectedStats, int selectedStatsCount, IntPtr userData);
+    public delegate bool SelectStatsCallback(int callerId, bool cancelled, string[] selectedStats, IntPtr userData);
     public delegate bool SelectFiltersCallback(int callerId, bool cancelled, string filters, IntPtr userData);
     public delegate bool GetHandsCallback(int callerId, string[] hands, IntPtr userData);
     public delegate bool GetHandsToFileCallback(int callerId, string[] hands, IntPtr userData);

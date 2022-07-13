@@ -523,7 +523,7 @@ namespace MvsAppApi.DllAdapter
             {
                 selectedStatsArray = StringMarshaller.Marshal((byte **) selectedStats, selectedStatsCount, _log);
             }
-            var result = _selectStatsCallback(callerId, cancelled, selectedStatsArray, selectedStatsCount, userData);
+            var result = _selectStatsCallback(callerId, cancelled, selectedStatsArray, userData);
             return result;
         }
 
