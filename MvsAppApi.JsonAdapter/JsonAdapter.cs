@@ -536,12 +536,12 @@ namespace MvsAppApi.JsonAdapter
             return success;
         }
 
-        public bool RegisterPositionalStats(List<string> stats, string tableType, string hasPosition, string positionType, RegisterPositionalStatsCallback callback)
+        public bool RegisterPositionalStats(TableType tableType, List<string> stats, PositionType positionType, HasPosition hasPosition, RegisterPositionalStatsCallback callback)
         {
             _registerPositionalStatsCallback = callback;
 
             var start = DateTime.Now;
-            var success = _outbound.RegisterPositionalStats(++_outboundRequestId, stats, tableType, hasPosition, positionType, out var responseStr);
+            var success = _outbound.RegisterPositionalStats(++_outboundRequestId, tableType, stats, positionType, hasPosition, out var responseStr);
             var dateDiff = DateTime.Now - start;
             AddClientText(RequestLabel + _outbound.PriorRequest);
             AddClientText(ClientResponseLine(dateDiff, responseStr));
@@ -1472,7 +1472,7 @@ namespace MvsAppApi.JsonAdapter
             if (_selectStatsCallback != null)
             {
                 var stats = selectedStats != null ? Enumerable.ToArray<string>(selectedStats.Select(e => e.ToString())) : Array.Empty<string>();
-                _selectStatsCallback(callerId, Convert.ToBoolean(cancelled), stats, stats.Length, IntPtr.Zero);
+                _selectStatsCallback(callerId, Convert.ToBoolean(cancelled), stats, IntPtr.Zero);
             }
 
             SendSuccessResponse(_inbound[request.Index].NamedPipeStream, request, start);

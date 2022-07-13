@@ -147,9 +147,9 @@ namespace MvsAppApi.JsonAdapter
             return IsSuccess(response);
         }
 
-        public bool RegisterPositionalStats(int requestId, List<string> stats, string tableType, string hasPosition, string positionType, out string responseStr)
+        public bool RegisterPositionalStats(int requestId, TableType tableType, List<string> stats, PositionType positionType, HasPosition hasPosition, out string responseStr)
         {
-            responseStr = Invoke(RegisterPositionalStatsCommand(requestId, stats, tableType, hasPosition, positionType));
+            responseStr = Invoke(RegisterPositionalStatsCommand(requestId, tableType, stats, positionType, hasPosition));
             dynamic response = JsonConvert.DeserializeObject(responseStr);
             return IsSuccess(response);
         }
@@ -359,13 +359,13 @@ namespace MvsAppApi.JsonAdapter
             return "{\"id\": " + requestId + ",\"method\":\"remove_stats\",\"params\":{\"stats\":" + serializedStats + "}}";
         }
 
-        protected string RegisterPositionalStatsCommand(int requestId, List<string> stats, string tableType, string hasPosition, string positionType)
+        protected string RegisterPositionalStatsCommand(int requestId, TableType tableType, List<string> stats, PositionType positionType, HasPosition hasPosition)
         {
             var serializedStats = JsonConvert.SerializeObject(stats);
             return "{\"id\": " + requestId + ",\"method\":\"register_positional_stats\",\"params\":{\"stats\":" + serializedStats +
                    ", \"table_type\":" + JsonConvert.ToString(tableType) +
-                   (!string.IsNullOrEmpty(hasPosition) ? ", \"has_position\":" + JsonConvert.ToString(hasPosition) : "") +
-                   (!string.IsNullOrEmpty(positionType) ? ", \"position_type\":" + JsonConvert.ToString(positionType) : "") + "}}";
+                   (hasPosition != HasPosition.None ? ", \"has_position\":" + JsonConvert.ToString(hasPosition.ToString().ToLower()) : "") +
+                   (positionType != PositionType.None ? ", \"position_type\":" + JsonConvert.ToString(positionType.ToString().ToLower()) : "") + "}}";
         }
 
         protected string SelectStatsCommand(int requestId, string tableType, string [] includedStats, string[] defaultStats)

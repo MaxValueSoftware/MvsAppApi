@@ -763,9 +763,16 @@ namespace MvsAppApi.DllAdapter
                 : MvsApiRegisterStats_x86(stats, statsCount, resultCallback, userData, out callerId);
         }
 
-
-
-        //MVSAPI_DLLEXPORT int mvsApi_registerPositionalStats(int tableType, const char** stats, int statsCount, int positionType, int hasPosition, mvsApiCallback_resultCallbackRegisterPositionalStats callback, MVSAPI_LPARAM userData, int* callerID);
+        [DllImport(X86FileName, CallingConvention = CallingConvention.StdCall, EntryPoint = "mvsApi_registerPositionalStats")]
+        private static extern ApiErrorCode MvsApiRegisterPositionalStats_x86(TableType tableType, string[] stats, int statsCount, PositionType positionType, HasPosition hasPosition, RegisterPositionalStatsCallback resultCallback, IntPtr userData, out int callerId);
+        [DllImport(X64FileName, CallingConvention = CallingConvention.StdCall, EntryPoint = "mvsApi_registerPositionalStats")]
+        private static extern ApiErrorCode MvsApiRegisterPositionalStats_x64(TableType tableType, string[] stats, int statsCount, PositionType positionType, HasPosition hasPosition, RegisterPositionalStatsCallback resultCallback, IntPtr userData, out int callerId);
+        internal static ApiErrorCode MvsApiRegisterPositionalStats(TableType tableType, string[] stats, int statsCount, PositionType positionType, HasPosition hasPosition, RegisterPositionalStatsCallback resultCallback, IntPtr userData, out int callerId)
+        {
+            return Environment.Is64BitProcess
+                ? MvsApiRegisterPositionalStats_x64(tableType, stats, statsCount, positionType, hasPosition, resultCallback, userData, out callerId)
+                : MvsApiRegisterPositionalStats_x86(tableType, stats, statsCount, positionType, hasPosition, resultCallback, userData, out callerId);
+        }
 
         [DllImport(X86FileName, CallingConvention = CallingConvention.StdCall, EntryPoint = "mvsApi_removeStats")]
         private static extern ApiErrorCode MvsApiRemoveStats_x86(int idTableType, [In] string[] stats, int statsCount, RemoveStatsCallback resultCallback, IntPtr userData, out int callerId);

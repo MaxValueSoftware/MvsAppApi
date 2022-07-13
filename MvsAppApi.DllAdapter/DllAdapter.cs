@@ -874,10 +874,15 @@ namespace MvsAppApi.DllAdapter
             return success;
         }
 
-        public bool RegisterPositionalStats(List<string> stats, string tableType, string hasPosition, string positionType, RegisterPositionalStatsCallback callback)
+        public bool RegisterPositionalStats(TableType tableType, List<string> stats, PositionType positionType, HasPosition hasPosition, RegisterPositionalStatsCallback callback)
         {
-            // todo: RegisterPositionalStats
-            throw new NotImplementedException();
+            var start = DateTime.Now;
+            AddClientText(RequestLabel + "RegisterPositionalStats");
+            
+            var result = Imports.MvsApiRegisterPositionalStats(tableType, stats.ToArray(), stats.Count, positionType, hasPosition, callback, IntPtr.Zero, out int callerId);
+            var dateDiff = DateTime.Now - start;
+            AddClientText(ClientResponseLine(dateDiff, $"result={result}"));
+            return result == ApiErrorCode.MvsApiResultSuccess;
         }
 
         public bool RegisterStats(List<Stat> stats, RegisterStatsCallback callback)

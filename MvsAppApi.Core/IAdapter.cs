@@ -33,7 +33,7 @@ namespace MvsAppApi.Core
         bool RegisterHandsMenu(List<string> menuItems, string menuIcon, HandFormat format);
         bool Noop(int wait, bool shouldFail, string extraBytes, out int noopSize);
         bool QueryStats(TableType tableType, int siteId, string[] playersList, string[] statsList, string filters, QueryStatsCallback callback);
-        bool RegisterPositionalStats(List<string> stats, string tableType, string hasPosition, string positionType, RegisterPositionalStatsCallback callback);
+        bool RegisterPositionalStats(TableType tableType, List<string> stats, PositionType positionType, HasPosition hasPosition, RegisterPositionalStatsCallback callback);
         bool RegisterStats(List<Stat> stats, RegisterStatsCallback callback);
         bool RemoveStats(List<Stat> stats, RemoveStatsCallback callback);
         bool ImportHand(int importHandSiteId, string encodedHand);
@@ -95,7 +95,7 @@ namespace MvsAppApi.Core
     public delegate bool QueryHmqlCallback(QueryHmqlResult result, IntPtr userData);
     public delegate bool QueryPtsqlCallback(int callerId, bool errored, int errorCode, string errorMessage, StatValue[][] statValues, IntPtr userData);
     public delegate bool ImportHudProfileCallback(int callerId, bool errored, int errorCode, string errorMessage, IntPtr userData);
-    public delegate bool RegisterPositionalStatsCallback(int callerId, bool errored, int errorCode, string errorMessage, string[] statNames, IntPtr userData);
+    public delegate bool RegisterPositionalStatsCallback(int callerId, bool errored, int errorCode, string errorMessage, string[] statnames, IntPtr userData);
     public delegate bool RegisterStatsCallback(int callerId, bool errored, int errorCode, string errorMessage, IntPtr userData);
     public delegate bool RemoveStatsCallback(int callerId, bool errored, int errorCode, string errorMessage, IntPtr userData);
 
