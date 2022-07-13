@@ -624,14 +624,8 @@ namespace MvsAppApi.JsonAdapter
                 if (!(playerResults is JArray))
                     continue;
                 
-                var statValues = new List<StatValue>();
-                if (!stats.Contains("PlayerName"))
-                    statValues.Add(new StatValue
-                    {
-                        Value = players[playersCount]
-                    });
-
                 var statCount = 0;
+                var statValues = new List<StatValue>();
                 foreach (var playerStatResult in (JArray)playerResults)
                 {
                     if (statCount >= playerResults.Count()) break;
@@ -737,12 +731,6 @@ namespace MvsAppApi.JsonAdapter
                     continue;
 
                 var statValues = new List<StatValue>();
-                if (!stats.Contains("PlayerName"))
-                    statValues.Add(new StatValue
-                    {
-                        Value = players[playersCount]
-                    });
-
                 var statCount = 0;
                 foreach (var playerStatResult in (JArray)playerResults)
                 {
