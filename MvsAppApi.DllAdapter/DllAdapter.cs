@@ -1,29 +1,24 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Data;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 using MvsAppApi.Core;
 using MvsAppApi.Core.Enums;
 using MvsAppApi.Core.Structs;
 using MvsAppApi.DllAdapter.Structs;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace MvsAppApi.DllAdapter
 {
     // see https://stackoverflow.com/questions/42443175/marshal-const-char
     public unsafe static class StringMarshaller
     {
-        public static string[] Marshal(byte** nativeStrings, int stringCount, LogCallback _log)
+        public static string[] MarshalFromUtf8(byte** nativeStrings, int stringCount, LogCallback _log)
         {
-            _log($@"Marshal: {stringCount} strings");
+            //_log($@"Marshal: {stringCount} strings");
             var strings = new string[stringCount];
             for (var x = 0; x < stringCount; ++x)
             {
@@ -57,7 +52,7 @@ namespace MvsAppApi.DllAdapter
             return length;
         }
     }
-
+    
     public class DllAdapter : IAdapter
     {
         private Profile _profile;
@@ -184,8 +179,8 @@ namespace MvsAppApi.DllAdapter
         {
             var success = false;
 
-            var values = StringMarshaller.Marshal(valuesArr, valuesCount, _log);
-            var types = StringMarshaller.Marshal(typesArr, valuesCount, _log);
+            var values = StringMarshaller.MarshalFromUtf8(valuesArr, valuesCount, _log);
+            var types = StringMarshaller.MarshalFromUtf8(typesArr, valuesCount, _log);
             var hmqlValues = new List<HmqlValue>();
             for (int x = 0; x < values.Length; x++)
             {
@@ -216,8 +211,8 @@ namespace MvsAppApi.DllAdapter
         {
             string[] values;
             string[] pctDetails;
-            values = StringMarshaller.Marshal(valuesArr, valuesCount, _log);
-            pctDetails = StringMarshaller.Marshal(pctDetailsArr, valuesCount, _log);
+            values = StringMarshaller.MarshalFromUtf8(valuesArr, valuesCount, _log);
+            pctDetails = StringMarshaller.MarshalFromUtf8(pctDetailsArr, valuesCount, _log);
             _queryPtsqlResult.CallerId = callerId;
             _queryPtsqlResult.Errored = errored;
             _queryPtsqlResult.ErrorCode = errorCode;
@@ -245,7 +240,7 @@ namespace MvsAppApi.DllAdapter
 
         private unsafe bool GetHandsCallback(int callerId, bool errored, int errorCode, string errorMessage, byte** hands, int handsCount, IntPtr userData)
         {
-            var handsArray = StringMarshaller.Marshal(hands, handsCount, _log);
+            var handsArray = StringMarshaller.MarshalFromUtf8(hands, handsCount, _log);
             var result = _getHandsCallback(callerId, handsArray, userData);
             return result;
         }
@@ -288,7 +283,7 @@ namespace MvsAppApi.DllAdapter
 
         private unsafe bool GetHandTagsCallback(int callerId, bool errored, int errorCode, string errorMessage, byte** tags, int tagsCount, IntPtr userData)
         {
-            var tagsArray = StringMarshaller.Marshal(tags, tagsCount, _log);
+            var tagsArray = StringMarshaller.MarshalFromUtf8(tags, tagsCount, _log);
             var result = _getHandTagsCallback(callerId, errored, errorCode, errorMessage, tagsArray, userData);
             return result;
         }
@@ -446,7 +441,7 @@ namespace MvsAppApi.DllAdapter
                     {
                         unsafe
                         {
-                            value = StringMarshaller.Marshal(settingHudProfiles.Profiles, (int)settingHudProfiles.ProfilesCount, _log);
+                            value = StringMarshaller.MarshalFromUtf8(settingHudProfiles.Profiles, (int)settingHudProfiles.ProfilesCount, _log);
                             result = Imports.MvsApiCleanupHudProfiles(ref settingHudProfiles);
                         }
                     }
@@ -552,7 +547,7 @@ namespace MvsAppApi.DllAdapter
             string[] selectedStatsArray;
             unsafe
             {
-                selectedStatsArray = StringMarshaller.Marshal((byte **) selectedStats, selectedStatsCount, _log);
+                selectedStatsArray = StringMarshaller.MarshalFromUtf8((byte **) selectedStats, selectedStatsCount, _log);
             }
             var result = _selectStatsCallback(callerId, cancelled, selectedStatsArray, userData);
             return result;
@@ -677,6 +672,13 @@ namespace MvsAppApi.DllAdapter
 
         private bool GetStatsCallback(StatInternal stat, string type, bool playerPct, bool hudSafe, bool groupBy, bool tableAverageable, int appId, IntPtr userData)
         {
+            string[] categories;
+            string[] flags;
+            unsafe
+            {
+                categories = StringMarshaller.MarshalFromUtf8((byte**)stat.Categories, stat.CategoriesCount, _log);
+                flags = StringMarshaller.MarshalFromUtf8((byte**)stat.Flags, stat.FlagsCount, _log);
+            }
             var statInfo = new StatInfo
             {
                 Stat = stat.Name,
@@ -684,13 +686,13 @@ namespace MvsAppApi.DllAdapter
                 Value = stat.Value,
                 Format = stat.Format,
                 Type = type,
-                // Categories = stat.Categories,
+                Categories = categories.ToList(),
                 PlayerPct = playerPct,
                 HudSafe = hudSafe,
                 GroupBy = groupBy,
                 AppId = appId,
-                // TableAverageable = tableAverageable,
-                // Flags = stat.Flags,
+                Flags = flags.ToList(),
+                // TableAverageable = tableAverageable, 
                 // etc
             };
             _statInfos.TryAdd(statInfo);
@@ -878,8 +880,8 @@ namespace MvsAppApi.DllAdapter
         {
             string[] values;
             string[] pctDetails;
-            values = StringMarshaller.Marshal(valuesArr, valuesCount, _log);
-            pctDetails = StringMarshaller.Marshal(pctDetailsArr, valuesCount, _log);
+            values = StringMarshaller.MarshalFromUtf8(valuesArr, valuesCount, _log);
+            pctDetails = StringMarshaller.MarshalFromUtf8(pctDetailsArr, valuesCount, _log);
             _queryStatsResult.CallerId = callerId;
             _queryStatsResult.Errored = errored;
             _queryStatsResult.ErrorCode = errorCode;
@@ -916,10 +918,13 @@ namespace MvsAppApi.DllAdapter
             return result == ApiErrorCode.MvsApiResultSuccess;
         }
 
+        RegisterStatsCallback _registerStatsCallback;
         public bool RegisterStats(List<Stat> stats, RegisterStatsCallback callback)
         {
             var start = DateTime.Now;
             AddClientText(RequestLabel + "RegisterStats");
+            _registerStatsCallback = callback;
+            
             var statInternals = new List<StatInternal>();
             foreach (var stat in stats)
             {
@@ -956,7 +961,7 @@ namespace MvsAppApi.DllAdapter
                 statInternals.Add(statInternal);
             }
 
-            var result = Imports.MvsApiRegisterStats(statInternals.ToArray(), statInternals.Count, callback, IntPtr.Zero, out int callerId);
+            var result = Imports.MvsApiRegisterStats(statInternals.ToArray(), statInternals.Count, _registerStatsCallback, IntPtr.Zero, out int callerId);
             var dateDiff = DateTime.Now - start;
             AddClientText(ClientResponseLine(dateDiff, $"result={result}"));
             return result == ApiErrorCode.MvsApiResultSuccess;
