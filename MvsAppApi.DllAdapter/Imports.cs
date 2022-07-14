@@ -33,8 +33,8 @@ namespace MvsAppApi.DllAdapter
         internal delegate bool NoteHandsCallback(string noteId, HandInternal[] noteHands, int handsMax, out int handsCount);
         internal delegate bool GetStatsCallback(StatInternal stat, string type, bool playerPct, bool hudSafe, bool groupBy, bool tableAverageable, int appId, IntPtr userData);
         internal unsafe delegate bool QueryStatsCallback(int callerId, bool errored, int errorCode, string errorMessage, int row, int rowCount, byte** values, byte** pctDetails, int valuesCount, IntPtr userData);
+        internal unsafe delegate bool QueryPtsqlCallback(int callerId, bool errored, int errorCode, string errorMessage, int row, int rowCount, byte** values, byte** pctDetails, int valuesCount, IntPtr userData);
         internal unsafe delegate bool QueryHmqlCallback(int callerId, bool errored, int errorCode, string errorMessage, int row, int rowCount, byte** values, byte** types, int valuesCount, IntPtr userData);
-        internal delegate bool QueryPtsqlCallback(int callerId, bool errored, int errorCode, string errorMessage, int row, int rowCount, string[] values, string[] pctDetails, int valuesCount, IntPtr userData);
         internal delegate bool QueryPlayersCallback(int callerId, bool errored, int errorCode, string errorMessage, string playerName, int siteId, bool anonymous, int cashHands, int tourneyHands, int current, int max, IntPtr userData);
         internal delegate bool QueryNotesCallback(int callerId, bool errored, int errorCode, string errorMessage, string player, string color, string notes, int current, int max, IntPtr userData);
         internal delegate bool StatValueCallback(int requestId, string stat, int tableType, int siteId, string player, string filters, int current, int max, StringBuilder buffer, int bufferLen);
@@ -651,7 +651,6 @@ namespace MvsAppApi.DllAdapter
                 : MvsApiSelectStats_x86(tableType, includedStats, includedStatsCount, defaultStats, defaultStatsCount, callback, userData, ref callerId);
         }
 
-        //MVSAPI_DLLEXPORT int mvsApi_selectFilters(int tableType, const char* currentFilters, mvsApiCallback_resultCallbackSelectFilters callback, MVSAPI_LPARAM userData, int* callerID);
         [DllImport(X86FileName, CallingConvention = CallingConvention.StdCall, EntryPoint = "mvsApi_selectFilters")]
         private static extern ApiErrorCode MvsApiSelectFilters_x86(int tableType, [In] string currentFilters, SelectFiltersCallback callback, IntPtr userData, ref int callerId);
         [DllImport(X64FileName, CallingConvention = CallingConvention.StdCall, EntryPoint = "mvsApi_selectFilters")]
@@ -663,9 +662,6 @@ namespace MvsAppApi.DllAdapter
                 : MvsApiSelectFilters_x86(tableType, currentFilters, callback, userData, ref callerId);
         }
 
-        //MVSAPI_DLLEXPORT int mvsApi_queryStatsPlayer(int tableType, int idSite, const char* player, const char** stats, int statsCount, const char* filtersJson, mvsApiCallback_resultCallbackQueryStats callback, MVSAPI_LPARAM userData, int* callerID);
-        
-        //MVSAPI_DLLEXPORT int mvsApi_queryStatsMultiplePlayers(int tableType, int idSite, const char** players, int playersCount, const char** stats, int statsCount, const char* filtersJson, mvsApiCallback_resultCallbackQueryStats callback, MVSAPI_LPARAM userData, int* callerID);
         [DllImport(X86FileName, CallingConvention = CallingConvention.StdCall, EntryPoint = "mvsApi_queryStatsMultiplePlayers")]
         private static extern ApiErrorCode MvsApiQueryStatsMultiplePlayers_x86(int tableType, int siteId, string[] players, int playersCount, string[] stats, int statsCount, string filterJson, QueryStatsCallback callback, IntPtr userData, out int callerId);
         [DllImport(X64FileName, CallingConvention = CallingConvention.StdCall, EntryPoint = "mvsApi_queryStatsMultiplePlayers")]
@@ -678,9 +674,6 @@ namespace MvsAppApi.DllAdapter
                 : MvsApiQueryStatsMultiplePlayers_x86(tableType, siteId, players, playersCount, stats, statsCount, filterJson, callback, userData, out callerId);
         }
 
-        //MVSAPI_DLLEXPORT int mvsApi_queryPTSQL(int tableType, const char** stats, int statsCount, const char* filters, const char** orderByStats, MVSAPI_BOOL orderByDesc, int orderByCount, MVSAPI_BOOL activePlayer, mvsApiCallback_resultCallbackQueryPTSQL callback, MVSAPI_LPARAM userData, int* callerID);
-
-        //MVSAPI_DLLEXPORT int mvsApi_queryPlayers(MvsApi_QueryPlayerFilters* filters, mvsApiCallback_resultCallbackQueryPlayers callback, MVSAPI_LPARAM userData, int* callerID);
         [DllImport(X86FileName, CallingConvention = CallingConvention.StdCall, EntryPoint = "mvsApi_queryPlayers")]
         private static extern ApiErrorCode MvsApiQueryPlayers_x86(QueryPlayerFiltersInternal filters, QueryPlayersCallback callback, IntPtr userData, out int callerId);
         [DllImport(X64FileName, CallingConvention = CallingConvention.StdCall, EntryPoint = "mvsApi_queryPlayers")]
@@ -728,6 +721,19 @@ namespace MvsAppApi.DllAdapter
                 ? MvsApiQueryHmql_x64(query, callback, userData, out callerId)
                 : MvsApiQueryHmql_x86(query, callback, userData, out callerId);
         }
+
+        [DllImport(X86FileName, CallingConvention = CallingConvention.StdCall, EntryPoint = "mvsApi_queryPTSQL")]
+        private static extern ApiErrorCode MvsApiQueryPtsql_x86(TableType tableType, string[] stats, int statsCount, string filters, string[] orderByStats, bool orderByDesc, int orderByCount, bool activePlayer, QueryPtsqlCallback callback, IntPtr userData, out int callerId);
+        [DllImport(X64FileName, CallingConvention = CallingConvention.StdCall, EntryPoint = "mvsApi_queryPTSQL")]
+        private static extern ApiErrorCode MvsApiQueryPtsql_x64(TableType tableType, string[] stats, int statsCount, string filters, string[] orderByStats, bool orderByDesc, int orderByCount, bool activePlayer, QueryPtsqlCallback callback, IntPtr userData, out int callerId);
+        internal static ApiErrorCode MvsApiQueryPtsql(TableType tableType, string[] stats, int statsCount, string filters, string[] orderByStats, bool orderByDesc, int orderByCount, bool activePlayer, QueryPtsqlCallback callback, IntPtr userData, out int callerId)
+        {
+
+            return Environment.Is64BitProcess
+                ? MvsApiQueryPtsql_x64(tableType, stats, statsCount, filters, orderByStats, orderByDesc, orderByCount, activePlayer, callback, userData, out callerId)
+                : MvsApiQueryPtsql_x86(tableType, stats, statsCount, filters, orderByStats, orderByDesc, orderByCount, activePlayer, callback, userData, out callerId);
+        }
+
 
         [DllImport(X86FileName, CallingConvention = CallingConvention.StdCall, EntryPoint = "mvsApi_queryNotesPlayer")]
         private static extern ApiErrorCode MvsApiQueryNotesPlayer_x86(int siteId, string player, QueryNotesCallback callback, IntPtr userData, out int callerId);

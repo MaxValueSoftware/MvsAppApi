@@ -283,7 +283,7 @@ namespace MvsAppApi.JsonAdapter
             return IsSuccess(response);
         }
 
-        public bool QueryPtsql(int requestId, string tableType, IEnumerable stats, bool activePlayer, bool handQuery, out string responseStr)
+        public bool QueryPtsql(int requestId, TableType tableType, IEnumerable stats, bool activePlayer, bool handQuery, out string responseStr)
         {
             responseStr = Invoke(QueryPtsqlCommand(requestId, tableType, stats, activePlayer, handQuery));
             dynamic response = JsonConvert.DeserializeObject(responseStr);
@@ -574,10 +574,11 @@ namespace MvsAppApi.JsonAdapter
             return "{\"id\": " + requestId + ",\"method\":\"query_hmql\",\"params\":{\"query\":" + "\"" + queryText + "\"" + "}}";
         }
 
-        private string QueryPtsqlCommand(int requestId, string tableType, IEnumerable stats, bool activePlayer, bool handQuery)
+        private string QueryPtsqlCommand(int requestId, TableType tableType, IEnumerable stats, bool activePlayer, bool handQuery)
         {
+            var tableTypeStr = tableType == TableType.Cash ? "cash" : "tournament";
             return "{\"id\": " + requestId + 
-                   ",\"method\":\"query_ptsql\",\"params\":{\"table_type\":" + JsonConvert.ToString(tableType) +
+                   ",\"method\":\"query_ptsql\",\"params\":{\"table_type\":" + JsonConvert.ToString(tableTypeStr) +
                    ",\"stats\":" + JsonConvert.SerializeObject(stats) +
                    ",\"active_player\":" + JsonConvert.ToString(activePlayer) +
                    ",\"hand_query\":" + JsonConvert.ToString(handQuery) +

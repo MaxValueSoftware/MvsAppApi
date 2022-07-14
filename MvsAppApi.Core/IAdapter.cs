@@ -33,14 +33,14 @@ namespace MvsAppApi.Core
         bool RegisterHandsMenu(List<string> menuItems, string menuIcon, HandFormat format);
         bool Noop(int wait, bool shouldFail, string extraBytes, out int noopSize);
         bool QueryStats(TableType tableType, int siteId, string[] playersList, string[] statsList, string filters, QueryStatsCallback callback);
+        bool QueryHmql(string hmqlQueryText, QueryHmqlCallback callback);
+        bool QueryPtsql(TableType tableType, string[] stats, string filters, string[] orderByStats, bool orderByDesc, bool activePlayer, bool handQuery, QueryPtsqlCallback callback);
         bool RegisterPositionalStats(TableType tableType, List<string> stats, PositionType positionType, HasPosition hasPosition, RegisterPositionalStatsCallback callback);
         bool RegisterStats(List<Stat> stats, RegisterStatsCallback callback);
         bool RemoveStats(List<Stat> stats, RemoveStatsCallback callback);
         bool ImportHand(int importHandSiteId, string encodedHand);
         bool ImportHudProfile(string fileName, string profileFileName, TableType tableType, ImportHudProfileCallback callback);
-        bool QueryHmql(string hmqlQueryText, QueryHmqlCallback callback);
-        bool QueryPtsql(string tableType, string[] stats, bool activePlayer, bool handQuery, QueryPtsqlCallback callback);
-
+        
         // misc properties
         bool BreakRequests { get; set; }
         bool DisableUnsavedChangesSupport { get; set; }
@@ -92,8 +92,8 @@ namespace MvsAppApi.Core
     public delegate bool QueryNotesCallback(QueryNotesResult result, IntPtr userData);
     public delegate bool QueryPlayersCallback(QueryPlayersResult result, IntPtr userData);
     public delegate bool QueryStatsCallback(QueryStatsResult result, IntPtr userData);
+    public delegate bool QueryPtsqlCallback(QueryStatsResult result, IntPtr userData);
     public delegate bool QueryHmqlCallback(QueryHmqlResult result, IntPtr userData);
-    public delegate bool QueryPtsqlCallback(int callerId, bool errored, int errorCode, string errorMessage, StatValue[][] statValues, IntPtr userData);
     public delegate bool ImportHudProfileCallback(int callerId, bool errored, int errorCode, string errorMessage, IntPtr userData);
     public delegate bool RegisterPositionalStatsCallback(int callerId, bool errored, int errorCode, string errorMessage, string[] statnames, IntPtr userData);
     public delegate bool RegisterStatsCallback(int callerId, bool errored, int errorCode, string errorMessage, IntPtr userData);

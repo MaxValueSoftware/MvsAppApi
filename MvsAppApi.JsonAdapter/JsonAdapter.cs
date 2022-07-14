@@ -592,11 +592,10 @@ namespace MvsAppApi.JsonAdapter
         }
 
         
-        // todo: temp, should be conveyed through userData
         public string [] StatQueryPlayers { get; set; }
         public string [] StatQueryStats { get; set; }
         public string[] PtsqlQueryStats { get; set; }
-
+        
 
         private void QueryStatsResponseHandler(JArray results, int callerId)
         {
@@ -713,42 +712,45 @@ namespace MvsAppApi.JsonAdapter
             SendSuccessResponse(_inbound[request.Index].NamedPipeStream, request, start);
         }
 
-        private void QueryPtsqlResponseHandler(JArray rows, int callerId)
-        {
+        private void QueryPtsqlResponseHandler(JArray results, int callerId)
+        {            
+            // todo: callback errors
+            var result = new QueryStatsResult
+            {
+                CallerId = callerId,
+                UserData = IntPtr.Zero,
+                ErrorCode = 0,
+                ErrorMessage = "",
+                PlayerStatValues = new BlockingCollection<StatValue[]>()
+            };
+
             var stats = PtsqlQueryStats;
             for (var index = 0; index < stats.Length; index++)
                 stats[index] = stats[index].Trim();
 
-            var players = StatQueryPlayers;
-            for (var index = 0; index < players.Length; index++)
-                players[index] = players[index].Trim();
-
-            var playerStatValues = new List<StatValue[]>();
             var playersCount = 0;
-            foreach (var playerResults in rows)
+            foreach (var playerResults in results)
             {
                 if (!(playerResults is JArray))
                     continue;
 
-                var statValues = new List<StatValue>();
                 var statCount = 0;
+                var statValues = new List<StatValue>();
                 foreach (var playerStatResult in (JArray)playerResults)
                 {
                     if (statCount >= playerResults.Count()) break;
                     statValues.Add(new StatValue
                     {
                         Value = playerStatResult["v"].ToString(),
-                        PctDetail = playerStatResult["%"].ToString()
+                        PctDetail = playerStatResult["%"]?.ToString()
                     });
                     statCount++;
                 }
 
-                playerStatValues.Add(statValues.ToArray());
-
-                // todo: callback errors
-                _queryPtsqlCallback(callerId, false, 0, "", playerStatValues.ToArray(), IntPtr.Zero);
+                result.PlayerStatValues.TryAdd(statValues.ToArray());
                 playersCount++;
             }
+            _queryPtsqlCallback(result, IntPtr.Zero);
         }
 
         
@@ -985,13 +987,13 @@ namespace MvsAppApi.JsonAdapter
             return success;
         }
 
-        public bool QueryPtsql(string ptsqlQueryTableType, string[] stats, bool ptsqlQueryActivePlayer, bool ptsqlQueryHandQuery, QueryPtsqlCallback doQueryPtsqlCallback)
+        public bool QueryPtsql(TableType tableType, string[] stats, string filters, string[] orderByStats, bool orderByDesc, bool ptsqlQueryActivePlayer, bool ptsqlQueryHandQuery, QueryPtsqlCallback doQueryPtsqlCallback)
         {
             _queryPtsqlCallback = doQueryPtsqlCallback;
             PtsqlQueryStats = stats;
 
             var start = DateTime.Now;
-            var success =  _outbound.QueryPtsql(++_outboundRequestId, ptsqlQueryTableType, stats, ptsqlQueryActivePlayer, ptsqlQueryHandQuery, out var responseStr);
+            var success =  _outbound.QueryPtsql(++_outboundRequestId, tableType, stats, ptsqlQueryActivePlayer, ptsqlQueryHandQuery, out var responseStr);
             var dateDiff = DateTime.Now - start;
             AddClientText(RequestLabel + _outbound.PriorRequest);
             AddClientText(ClientResponseLine(dateDiff, responseStr));

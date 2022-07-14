@@ -212,6 +212,37 @@ namespace MvsAppApi.DllAdapter
             return success;
         }
 
+        unsafe bool QueryPtsqlCallback(int callerId, bool errored, int errorCode, string errorMessage, int row, int rowCount, byte** valuesArr, byte** pctDetailsArr, int valuesCount, IntPtr userData)
+        {
+            string[] values;
+            string[] pctDetails;
+            values = StringMarshaller.Marshal(valuesArr, valuesCount, _log);
+            pctDetails = StringMarshaller.Marshal(pctDetailsArr, valuesCount, _log);
+            _queryStatsResult.CallerId = callerId;
+            _queryStatsResult.Errored = errored;
+            _queryStatsResult.ErrorCode = errorCode;
+            _queryStatsResult.ErrorMessage = errorMessage;
+            var statValueList = new List<StatValue>();
+            for (var x = 0; x < valuesCount; x++)
+            {
+                var statValue = new StatValue
+                {
+                    Value = values[x],
+                    PctDetail = pctDetails[x]
+                };
+                statValueList.Add(statValue);
+            }
+
+            bool success = false;
+            if (_queryPtsqlCallback != null && row == 0)
+                success = _queryPtsqlCallback(_queryStatsResult, userData);
+
+            _queryStatsResult.PlayerStatValues.Add(statValueList.ToArray());
+            if (row == rowCount - 1)
+                _queryStatsResult.PlayerStatValues.CompleteAdding();
+            return success;
+        }
+
         private unsafe bool GetHandsCallback(int callerId, bool errored, int errorCode, string errorMessage, byte** hands, int handsCount, IntPtr userData)
         {
             var handsArray = StringMarshaller.Marshal(hands, handsCount, _log);
@@ -843,13 +874,13 @@ namespace MvsAppApi.DllAdapter
             return result == ApiErrorCode.MvsApiResultSuccess;
         }
 
-        private unsafe bool QueryStatsMultiplePlayersCallback(int callerid, bool errored, int errorCode, string errorMessage, int row, int rowCount, byte** valuesArr, byte** pctDetailsArr, int valuesCount, IntPtr userData)
+        private unsafe bool QueryStatsMultiplePlayersCallback(int callerId, bool errored, int errorCode, string errorMessage, int row, int rowCount, byte** valuesArr, byte** pctDetailsArr, int valuesCount, IntPtr userData)
         {
             string[] values;
             string[] pctDetails;
             values = StringMarshaller.Marshal(valuesArr, valuesCount, _log);
             pctDetails = StringMarshaller.Marshal(pctDetailsArr, valuesCount, _log);
-            _queryStatsResult.CallerId = callerid;
+            _queryStatsResult.CallerId = callerId;
             _queryStatsResult.Errored = errored;
             _queryStatsResult.ErrorCode = errorCode;
             _queryStatsResult.ErrorMessage = errorMessage;
@@ -1010,6 +1041,7 @@ namespace MvsAppApi.DllAdapter
         private Imports.QueryHmqlCallback _queryHmqlCallbackKeepAlive;
         private QueryHmqlCallback _queryHmqlCallback;
         private QueryHmqlResult _queryHmqlResult;
+        
         public unsafe bool QueryHmql(string hmqlQueryText, QueryHmqlCallback callback)
         {
             _queryHmqlCallback = callback;
@@ -1024,11 +1056,29 @@ namespace MvsAppApi.DllAdapter
             return result == ApiErrorCode.MvsApiResultSuccess;
         }
 
-        public bool QueryPtsql(string ptsqlQueryTableType, string[] stats, bool ptsqlQueryActivePlayer, bool ptsqlQueryHandQuery, QueryPtsqlCallback doQueryPtsqlCallback)
+        private Imports.QueryPtsqlCallback _queryPtsqlCallbackKeepAlive;
+        private QueryPtsqlCallback _queryPtsqlCallback;
+        private QueryStatsResult _queryPtsqlResult;
+        public unsafe bool QueryPtsql(TableType tableType, string[] stats, string filters, string[] orderByStats, bool orderByDesc, bool ptsqlQueryActivePlayer, bool ptsqlQueryHandQuery, QueryPtsqlCallback callback)
         {
-            // todo: QueryPtsql
+            _queryPtsqlCallback = callback;
+            _queryPtsqlCallbackKeepAlive = QueryPtsqlCallback;
+            _queryPtsqlResult = new QueryStatsResult { PlayerStatValues = new BlockingCollection<StatValue[]>() };
+
+            var start = DateTime.Now;
+            AddClientText(RequestLabel + "QueryPtsql");
+            var result = Imports.MvsApiQueryPtsql(tableType, stats, stats.Length, filters, orderByStats, orderByDesc, orderByStats.Length, ptsqlQueryActivePlayer, /*ptsqlQueryHandQuery,*/ _queryPtsqlCallbackKeepAlive, IntPtr.Zero, out var callerId);
+            var dateDiff = DateTime.Now - start;
+            AddClientText(ClientResponseLine(dateDiff, $"result={result}"));
+            return result == ApiErrorCode.MvsApiResultSuccess;
+        }
+
+        /*
+        public bool QueryPtsql(string ptsqlQueryText, string[] stats, bool ptsqlQueryActivePlayer, bool ptsqlQueryHandQuery, QueryPtsqlCallback callback)
+        {
             throw new NotImplementedException();
         }
+        */
 
         private void Log(string msg)
         {
