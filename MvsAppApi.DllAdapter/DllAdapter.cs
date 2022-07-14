@@ -34,11 +34,11 @@ namespace MvsAppApi.DllAdapter
                 }
 
                 var length = GetStringLength(nativeStrings[x]);
-                _log($@"Marshal: GetStringLength(nativeStrings[x]) == {length}");
+                //_log($@"Marshal: GetStringLength(nativeStrings[x]) == {length}");
                 strings[x] = length == 0
                     ? string.Empty
                     : Encoding.UTF8.GetString(nativeStrings[x], length);
-                _log($@"Marshal: marshalled to {strings[x]}");
+                //_log($@"Marshal: marshalled to {strings[x]}");
             }
 
             return strings;
@@ -218,10 +218,10 @@ namespace MvsAppApi.DllAdapter
             string[] pctDetails;
             values = StringMarshaller.Marshal(valuesArr, valuesCount, _log);
             pctDetails = StringMarshaller.Marshal(pctDetailsArr, valuesCount, _log);
-            _queryStatsResult.CallerId = callerId;
-            _queryStatsResult.Errored = errored;
-            _queryStatsResult.ErrorCode = errorCode;
-            _queryStatsResult.ErrorMessage = errorMessage;
+            _queryPtsqlResult.CallerId = callerId;
+            _queryPtsqlResult.Errored = errored;
+            _queryPtsqlResult.ErrorCode = errorCode;
+            _queryPtsqlResult.ErrorMessage = errorMessage;
             var statValueList = new List<StatValue>();
             for (var x = 0; x < valuesCount; x++)
             {
@@ -235,11 +235,11 @@ namespace MvsAppApi.DllAdapter
 
             bool success = false;
             if (_queryPtsqlCallback != null && row == 0)
-                success = _queryPtsqlCallback(_queryStatsResult, userData);
+                success = _queryPtsqlCallback(_queryPtsqlResult, userData);
 
-            _queryStatsResult.PlayerStatValues.Add(statValueList.ToArray());
+            _queryPtsqlResult.PlayerStatValues.Add(statValueList.ToArray());
             if (row == rowCount - 1)
-                _queryStatsResult.PlayerStatValues.CompleteAdding();
+                _queryPtsqlResult.PlayerStatValues.CompleteAdding();
             return success;
         }
 
@@ -1066,19 +1066,12 @@ namespace MvsAppApi.DllAdapter
             _queryPtsqlResult = new QueryStatsResult { PlayerStatValues = new BlockingCollection<StatValue[]>() };
 
             var start = DateTime.Now;
-            AddClientText(RequestLabel + "QueryPtsql");
-            var result = Imports.MvsApiQueryPtsql(tableType, stats, stats.Length, filters, orderByStats, orderByDesc, orderByStats.Length, ptsqlQueryActivePlayer, /*ptsqlQueryHandQuery,*/ _queryPtsqlCallbackKeepAlive, IntPtr.Zero, out var callerId);
+            AddClientText($@"{RequestLabel} QueryPtsql(tableType:{tableType}, activePlayer:{ptsqlQueryActivePlayer}, handQuery:{ptsqlQueryHandQuery}");
+            var result = Imports.MvsApiQueryPtsql(tableType, stats, stats.Length, filters, orderByStats, orderByDesc, orderByStats.Length, ptsqlQueryActivePlayer, ptsqlQueryHandQuery, _queryPtsqlCallbackKeepAlive, IntPtr.Zero, out var callerId);
             var dateDiff = DateTime.Now - start;
             AddClientText(ClientResponseLine(dateDiff, $"result={result}"));
             return result == ApiErrorCode.MvsApiResultSuccess;
         }
-
-        /*
-        public bool QueryPtsql(string ptsqlQueryText, string[] stats, bool ptsqlQueryActivePlayer, bool ptsqlQueryHandQuery, QueryPtsqlCallback callback)
-        {
-            throw new NotImplementedException();
-        }
-        */
 
         private void Log(string msg)
         {
