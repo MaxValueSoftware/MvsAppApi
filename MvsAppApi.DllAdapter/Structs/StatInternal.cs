@@ -19,11 +19,11 @@ namespace MvsAppApi.DllAdapter.Structs
         public string Format;
         //[MarshalAs(UnmanagedType.ByValArray, ArraySubType = UnmanagedType.LPTStr)] // doesn't help
         //public string[] Categories;
-        public IntPtr Categories;
+        public unsafe byte** Categories;
         public int CategoriesCount;
         //[MarshalAs(UnmanagedType.ByValArray, ArraySubType = UnmanagedType.LPTStr)] // doesn't help
         //public string[] Flags;
-        public IntPtr Flags;
+        public unsafe byte** Flags;
         public int FlagsCount;
     }
 }

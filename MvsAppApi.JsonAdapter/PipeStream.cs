@@ -210,6 +210,13 @@ namespace MvsAppApi.JsonAdapter
             return IsSuccess(response);
         }
 
+        public bool ChangeDatabase(int requestId, string database, out string responseStr)
+        {
+            responseStr = Invoke(ChangeDatabaseCommand(requestId, database));
+            dynamic response = JsonConvert.DeserializeObject(responseStr);
+            return IsSuccess(response);
+        }
+
         public bool ImportHudProfile(int requestId, string fileName, string profileName, TableType tableType, out string responseStr)
         {
             var tableTypeStr = tableType == TableType.Cash ? "cash" : "tournament";
@@ -455,6 +462,12 @@ namespace MvsAppApi.JsonAdapter
         protected string ChangeHudProfileCommand(int requestId, int siteId, string table, string profileName)
         {
             return "{\"id\": " + requestId + ",\"method\":\"change_hud_profile\",\"params\":{\"table\":\"" + table + "\", \"site_id\":" + siteId + ", \"profile_name\":\"" + profileName + "\"}}";
+        }
+
+        protected string ChangeDatabaseCommand(int requestId, string database)
+        {
+            var serializedDatabase = JsonConvert.SerializeObject(database);
+            return "{\"id\": " + requestId + ",\"method\":\"change_database\",\"params\":{\"database\":" + serializedDatabase + "}}";
         }
 
         private string EscapeJsonStringProperty(string property)

@@ -40,7 +40,8 @@ namespace MvsAppApi.Core
         bool RemoveStats(List<Stat> stats, RemoveStatsCallback callback);
         bool ImportHand(int importHandSiteId, string encodedHand);
         bool ImportHudProfile(string fileName, string profileFileName, TableType tableType, ImportHudProfileCallback callback);
-        
+        bool ChangeDatabase(string databaseName);
+
         // misc properties
         bool BreakRequests { get; set; }
         bool DisableUnsavedChangesSupport { get; set; }

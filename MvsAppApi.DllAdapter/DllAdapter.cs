@@ -13,51 +13,12 @@ using MvsAppApi.DllAdapter.Structs;
 
 namespace MvsAppApi.DllAdapter
 {
-    // see https://stackoverflow.com/questions/42443175/marshal-const-char
-    public unsafe static class StringMarshaller
-    {
-        public static string[] MarshalFromUtf8(byte** nativeStrings, int stringCount, LogCallback _log)
-        {
-            //_log($@"Marshal: {stringCount} strings");
-            var strings = new string[stringCount];
-            for (var x = 0; x < stringCount; ++x)
-            {
-                if (nativeStrings[x] == null)
-                {
-                    _log($@"Marshal: nativeStrings[x] == null, skipping");
-                    continue;
-                }
-
-                var length = GetStringLength(nativeStrings[x]);
-                //_log($@"Marshal: GetStringLength(nativeStrings[x]) == {length}");
-                strings[x] = length == 0
-                    ? string.Empty
-                    : Encoding.UTF8.GetString(nativeStrings[x], length);
-                //_log($@"Marshal: marshalled to {strings[x]}");
-            }
-
-            return strings;
-        }
-
-        private static int GetStringLength(byte* nativeString)
-        {
-            var length = 0;
-
-            while (*nativeString != '\0')
-            {
-                ++length;
-                ++nativeString;
-            }
-
-            return length;
-        }
-    }
-    
     public class DllAdapter : IAdapter
     {
         private Profile _profile;
         // initial callbacks
         private LogCallback _log;
+        // private ExceptionCallback _exception;
         private QuitCallback _quit;
         // connection callbacks
         private ConnectHashCallback _connectHash;
@@ -101,6 +62,13 @@ namespace MvsAppApi.DllAdapter
             if (res == ApiErrorCode.MvsApiResultSuccess)
                 res = Imports.MvsApiConnect((int)_profile.Tracker, _profile.MaxOutbound, _profile.MaxInbound, _profile.AppName,
                     _profile.AppVersion, ConnectHashCallback, ConnectInfoCallback);
+            
+            /*
+            //test new exception handler Josh added (the tester crashes, no log is written, callback doesn't get called)
+            if (res == ApiErrorCode.MvsApiResultSuccess)
+                res = Imports.MvsApiExceptionHandler(@"c:\temp", "test.log", ExceptionCallback);
+            Imports.MvsApiExceptionTester(); // test an exception
+            */
 
             // register callbacks (inbound requests)
             if (res == ApiErrorCode.MvsApiResultSuccess && profile.ImportStartedCallback != null) 
@@ -175,12 +143,12 @@ namespace MvsAppApi.DllAdapter
             return success;
         }
 
-        unsafe bool QueryHmqlCallback(int callerId, bool errored, int errorCode, string errorMessage, int rowIndex, int rowCount, byte** valuesArr, byte** typesArr, int valuesCount, IntPtr userData)
+        private unsafe bool QueryHmqlCallback(int callerId, bool errored, int errorCode, string errorMessage, int rowIndex, int rowCount, byte** valuesArr, byte** typesArr, int valuesCount, IntPtr userData)
         {
             var success = false;
 
-            var values = StringMarshaller.MarshalFromUtf8(valuesArr, valuesCount, _log);
-            var types = StringMarshaller.MarshalFromUtf8(typesArr, valuesCount, _log);
+            var values = MvsMarshal.PtrArrToStringArrUTF8(valuesArr, valuesCount, _log);
+            var types = MvsMarshal.PtrArrToStringArrUTF8(typesArr, valuesCount, _log);
             var hmqlValues = new List<HmqlValue>();
             for (int x = 0; x < values.Length; x++)
             {
@@ -207,12 +175,12 @@ namespace MvsAppApi.DllAdapter
             return success;
         }
 
-        unsafe bool QueryPtsqlCallback(int callerId, bool errored, int errorCode, string errorMessage, int row, int rowCount, byte** valuesArr, byte** pctDetailsArr, int valuesCount, IntPtr userData)
+        private unsafe bool QueryPtsqlCallback(int callerId, bool errored, int errorCode, string errorMessage, int row, int rowCount, byte** valuesArr, byte** pctDetailsArr, int valuesCount, IntPtr userData)
         {
             string[] values;
             string[] pctDetails;
-            values = StringMarshaller.MarshalFromUtf8(valuesArr, valuesCount, _log);
-            pctDetails = StringMarshaller.MarshalFromUtf8(pctDetailsArr, valuesCount, _log);
+            values = MvsMarshal.PtrArrToStringArrUTF8(valuesArr, valuesCount, _log);
+            pctDetails = MvsMarshal.PtrArrToStringArrUTF8(pctDetailsArr, valuesCount, _log);
             _queryPtsqlResult.CallerId = callerId;
             _queryPtsqlResult.Errored = errored;
             _queryPtsqlResult.ErrorCode = errorCode;
@@ -240,7 +208,7 @@ namespace MvsAppApi.DllAdapter
 
         private unsafe bool GetHandsCallback(int callerId, bool errored, int errorCode, string errorMessage, byte** hands, int handsCount, IntPtr userData)
         {
-            var handsArray = StringMarshaller.MarshalFromUtf8(hands, handsCount, _log);
+            var handsArray = MvsMarshal.PtrArrToStringArrUTF8(hands, handsCount, _log);
             var result = _getHandsCallback(callerId, handsArray, userData);
             return result;
         }
@@ -283,7 +251,7 @@ namespace MvsAppApi.DllAdapter
 
         private unsafe bool GetHandTagsCallback(int callerId, bool errored, int errorCode, string errorMessage, byte** tags, int tagsCount, IntPtr userData)
         {
-            var tagsArray = StringMarshaller.MarshalFromUtf8(tags, tagsCount, _log);
+            var tagsArray = MvsMarshal.PtrArrToStringArrUTF8(tags, tagsCount, _log);
             var result = _getHandTagsCallback(callerId, errored, errorCode, errorMessage, tagsArray, userData);
             return result;
         }
@@ -352,6 +320,13 @@ namespace MvsAppApi.DllAdapter
             return _profile.TablesCallback(tables);
         }
 
+        /*
+        private bool ExceptionCallback(int type, string message)
+        {
+            return _log($@"fatal exception: type={type}, msg={message}");
+        }
+        */
+        
         private bool StatValueCallback(int requestId, string stat, int tableType, int siteId, string player, string filters, int current, int max, StringBuilder buffer, int bufferLen)
         {
             if (current == 0)
@@ -441,7 +416,7 @@ namespace MvsAppApi.DllAdapter
                     {
                         unsafe
                         {
-                            value = StringMarshaller.MarshalFromUtf8(settingHudProfiles.Profiles, (int)settingHudProfiles.ProfilesCount, _log);
+                            value = MvsMarshal.PtrArrToStringArrUTF8(settingHudProfiles.Profiles, (int)settingHudProfiles.ProfilesCount, _log);
                             result = Imports.MvsApiCleanupHudProfiles(ref settingHudProfiles);
                         }
                     }
@@ -524,7 +499,7 @@ namespace MvsAppApi.DllAdapter
         private static SelectStatsCallback _selectStatsCallback;
         private static Imports.SelectStatsCallback _selectStatsCallbackKeepAlive;
 
-        public bool SelectStats(TableType tableType, string[] includedStats, string[] defaultStats, SelectStatsCallback callback)
+        public unsafe bool SelectStats(TableType tableType, string[] includedStats, string[] defaultStats, SelectStatsCallback callback)
         {
             _selectStatsCallback = callback;
             _selectStatsCallbackKeepAlive = SelectStatsCallback;
@@ -547,7 +522,7 @@ namespace MvsAppApi.DllAdapter
             string[] selectedStatsArray;
             unsafe
             {
-                selectedStatsArray = StringMarshaller.MarshalFromUtf8((byte **) selectedStats, selectedStatsCount, _log);
+                selectedStatsArray = MvsMarshal.PtrToStringArrUTF8(selectedStats, selectedStatsCount);
             }
             var result = _selectStatsCallback(callerId, cancelled, selectedStatsArray, userData);
             return result;
@@ -676,8 +651,8 @@ namespace MvsAppApi.DllAdapter
             string[] flags;
             unsafe
             {
-                categories = StringMarshaller.MarshalFromUtf8((byte**)stat.Categories, stat.CategoriesCount, _log);
-                flags = StringMarshaller.MarshalFromUtf8((byte**)stat.Flags, stat.FlagsCount, _log);
+                categories = MvsMarshal.PtrArrToStringArrUTF8(stat.Categories, stat.CategoriesCount, _log);
+                flags = MvsMarshal.PtrArrToStringArrUTF8(stat.Flags, stat.FlagsCount, _log);
             }
             var statInfo = new StatInfo
             {
@@ -880,8 +855,8 @@ namespace MvsAppApi.DllAdapter
         {
             string[] values;
             string[] pctDetails;
-            values = StringMarshaller.MarshalFromUtf8(valuesArr, valuesCount, _log);
-            pctDetails = StringMarshaller.MarshalFromUtf8(pctDetailsArr, valuesCount, _log);
+            values = MvsMarshal.PtrArrToStringArrUTF8(valuesArr, valuesCount, _log);
+            pctDetails = MvsMarshal.PtrArrToStringArrUTF8(pctDetailsArr, valuesCount, _log);
             _queryStatsResult.CallerId = callerId;
             _queryStatsResult.Errored = errored;
             _queryStatsResult.ErrorCode = errorCode;
@@ -919,7 +894,7 @@ namespace MvsAppApi.DllAdapter
         }
 
         RegisterStatsCallback _registerStatsCallback;
-        public bool RegisterStats(List<Stat> stats, RegisterStatsCallback callback)
+        public unsafe bool RegisterStats(List<Stat> stats, RegisterStatsCallback callback)
         {
             var start = DateTime.Now;
             AddClientText(RequestLabel + "RegisterStats");
@@ -942,6 +917,9 @@ namespace MvsAppApi.DllAdapter
                         break;
                 }
 
+                var categories = stat.Categories != null ? MvsMarshal.StringArrToCoTaskMemUTF8(stat.Categories, _log) : IntPtr.Zero;
+                var flags = stat.Flags != null ? MvsMarshal.StringArrToCoTaskMemUTF8(stat.Flags, _log) : IntPtr.Zero;
+
                 var statInternal = new StatInternal
                 {
                     Name = stat.Name,
@@ -949,10 +927,10 @@ namespace MvsAppApi.DllAdapter
                     Value = stat.Value,
                     Description = stat.Description,
                     DetailedDescription = stat.Detail,
-                    //Categories = stat.Categories,
-                    //CategoriesCount = stat.Categories?.Length ?? 0,
-                    //Flags = stat.Flags,
-                    //FlagsCount = stat.Flags?.Length ?? 0,
+                    Categories = (byte **) categories,
+                    CategoriesCount = stat.Categories?.Length ?? 0,
+                    Flags = (byte**)flags,
+                    FlagsCount = stat.Flags?.Length ?? 0,
                     Format = stat.Format,
                     Title = stat.Title,
                     Width = stat.Width
@@ -962,6 +940,22 @@ namespace MvsAppApi.DllAdapter
             }
 
             var result = Imports.MvsApiRegisterStats(statInternals.ToArray(), statInternals.Count, _registerStatsCallback, IntPtr.Zero, out int callerId);
+
+            // free up the memory for the marshalled strings
+            var x = 0;
+            foreach (var statInternal in statInternals)
+            {
+                //_log($@"free Categories for stat: {statInternal.Name} (x:{x})");
+                var cats = (IntPtr)statInternal.Categories;
+                if (cats != IntPtr.Zero)
+                    MvsMarshal.FreeCoTaskMemStringArr(cats,_log);
+                //_log($@"free Flags for stat: {statInternal.Name} (x:{x})");
+                var flags = (IntPtr)statInternal.Flags;
+                if (flags != IntPtr.Zero)
+                    MvsMarshal.FreeCoTaskMemStringArr(flags, _log);
+                x++;
+            }
+            //_log($@"done freeing Flags and Categories");
             var dateDiff = DateTime.Now - start;
             AddClientText(ClientResponseLine(dateDiff, $"result={result}"));
             return result == ApiErrorCode.MvsApiResultSuccess;
@@ -1027,6 +1021,16 @@ namespace MvsAppApi.DllAdapter
             var start = DateTime.Now;
             AddClientText(RequestLabel + "ChangeHudProfile");
             var result = Imports.MvsApiChangeHudProfile(siteId, tableName, profileName);
+            var dateDiff = DateTime.Now - start;
+            AddClientText(ClientResponseLine(dateDiff, $"result={result}"));
+            return result == ApiErrorCode.MvsApiResultSuccess;
+        }
+
+        public bool ChangeDatabase(string database)
+        {
+            var start = DateTime.Now;
+            AddClientText(RequestLabel + "ChangeDatabase");
+            var result = Imports.MvsApiChangeDatabase(database);
             var dateDiff = DateTime.Now - start;
             AddClientText(ClientResponseLine(dateDiff, $"result={result}"));
             return result == ApiErrorCode.MvsApiResultSuccess;

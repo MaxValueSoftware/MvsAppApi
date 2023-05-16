@@ -6,7 +6,7 @@
     <Product>MvsAppApi</Product>
     <Description>Common code and adapter interface for MVS Apps (experimental)</Description>
     <Copyright>Copyright ©  2022</Copyright>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <Authors>Max Value Software</Authors>
     <PackageProjectUrl>https://github.com/MaxValueSoftware/MvsAppApi</PackageProjectUrl>

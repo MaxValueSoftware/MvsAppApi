@@ -490,6 +490,18 @@ namespace MvsAppApi.JsonAdapter
             return success;
         }
 
+        public bool ChangeDatabase(string database)
+        {
+            var start = DateTime.Now;
+            var success = _outbound.ChangeDatabase(++_outboundRequestId, database, out var responseStr);
+            AddClientText(RequestLabel + _outbound.PriorRequest);
+            var dateDiff = DateTime.Now - start;
+            AddClientText(ClientResponseLine(dateDiff, responseStr));
+            if (success)
+                AddClientText("Database changed to: " + database);
+            return success;
+        }
+
         public bool RegisterNoteTab(string tabName, string tabIcon)
         {
             var start = DateTime.Now;

@@ -38,13 +38,13 @@ namespace MvsAppApi.DllAdapter
         internal delegate bool QueryPlayersCallback(int callerId, bool errored, int errorCode, string errorMessage, string playerName, int siteId, bool anonymous, int cashHands, int tourneyHands, int current, int max, IntPtr userData);
         internal delegate bool QueryNotesCallback(int callerId, bool errored, int errorCode, string errorMessage, string player, string color, string notes, int current, int max, IntPtr userData);
         internal delegate bool StatValueCallback(int requestId, string stat, int tableType, int siteId, string player, string filters, int current, int max, StringBuilder buffer, int bufferLen);
-        internal unsafe delegate bool GetHandTagsCallback(int callerId, bool errored, int errorCode, string errorMessage, byte **tags, int tagsCount, IntPtr userData);
+        internal unsafe delegate bool GetHandTagsCallback(int callerId, bool errored, int errorCode, string errorMessage, byte** tags, int tagsCount, IntPtr userData);
         internal delegate bool ReplayHandCallback(string hand, int hwnd, Point[] points, int pointsCount);
         internal unsafe delegate bool GetHandsCallback(int callerId, bool errored, int errorCode, string errorMessage, byte** handHistories, int handHistoriesCount, IntPtr userData);
         internal delegate bool GetHandsToFileCallback(int callerId, bool errored, int errorCode, string errorMessage, int handsWritten, IntPtr userData);
         internal delegate bool GetHandsToSharedMemoryCallback(int callerId, bool errored, int errorCode, string errorMessage, int handsWritten, int bytesWritten, IntPtr userData);
         internal delegate bool HandsSelectedCallback(string menuItem, [In] string[] selectedHands, int selectedHandsCount);
-        internal unsafe delegate bool SelectStatsCallback(int callerId, bool cancelled, IntPtr selectedStats, int selectedStatsCount, IntPtr userData);
+        internal delegate bool SelectStatsCallback(int callerId, bool cancelled, IntPtr selectedStats, int selectedStatsCount, IntPtr userData);
 
 
 
@@ -67,7 +67,34 @@ namespace MvsAppApi.DllAdapter
                 : MvsApiInitialize_x86(logCallback, quitCallback);
         }
 
+        /*
 
+        // test new exception handler Josh added (the tester crashes, no log is written, callback doesn't get called)
+
+        [DllImport(X86FileName, CallingConvention = CallingConvention.StdCall, EntryPoint = "mvsApi_exceptionHandler")]
+        private static extern ApiErrorCode MvsApiExceptionHandler_x86(string logPath, string logName, ExceptionCallback exceptionCallback);
+
+        [DllImport(X64FileName, CallingConvention = CallingConvention.StdCall, EntryPoint = "mvsApi_exceptionHandler")]
+        private static extern ApiErrorCode MvsApiExceptionHandler_x64(string logPath, string logName, ExceptionCallback exceptionCallback);
+        internal static ApiErrorCode MvsApiExceptionHandler(string logPath, string logName, ExceptionCallback exceptionCallback)
+        {
+            return Environment.Is64BitProcess
+                ? MvsApiExceptionHandler_x64(logPath, logName, exceptionCallback)
+                : MvsApiExceptionHandler_x86(logPath, logName, exceptionCallback);
+        }
+
+        [DllImport(X86FileName, CallingConvention = CallingConvention.StdCall, EntryPoint = "mvsApi_exceptionTester")]
+        private static extern ApiErrorCode MvsApiExceptionTester_x86();
+
+        [DllImport(X64FileName, CallingConvention = CallingConvention.StdCall, EntryPoint = "mvsApi_exceptionTester")]
+        private static extern ApiErrorCode MvsApiExceptionTester_x64();
+        internal static ApiErrorCode MvsApiExceptionTester()
+        {
+            return Environment.Is64BitProcess
+                ? MvsApiExceptionTester_x64()
+                : MvsApiExceptionTester_x86();
+        }
+        */
 
         [DllImport(X86FileName, CallingConvention = CallingConvention.StdCall, EntryPoint = "mvsApi_shutdown")]
         private static extern ApiErrorCode MvsApiShutdown_x86();
@@ -697,6 +724,14 @@ namespace MvsAppApi.DllAdapter
                 ? MvsApiChangeHudProfile_x64(siteId, tableName, profileName)
                 : MvsApiChangeHudProfile_x86(siteId, tableName, profileName);
         }
+
+        internal static ApiErrorCode MvsApiChangeDatabase(string database)
+        {
+
+            return ApiErrorCode.MvsApiResultBadParameter; // not implemented yet
+        }
+
+
 
         [DllImport(X86FileName, CallingConvention = CallingConvention.StdCall, EntryPoint = "mvsApi_importHudProfile")]
         private static extern ApiErrorCode MvsApiImportHudProfile_x86(string fileName, string profileName, int tableType, ImportHudProfileCallback callback, IntPtr userData, out int callerId);
